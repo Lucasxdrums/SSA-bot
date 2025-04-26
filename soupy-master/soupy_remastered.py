@@ -338,10 +338,7 @@ if not CHANNEL_IDS:
     logger.warning(
         "No CHANNEL_IDS specified. Shutdown notifications will not be sent.")
 
-REMOVE_BG_API_URL = os.getenv("REMOVE_BG_API_URL")
 
-if not REMOVE_BG_API_URL:
-    raise ValueError("No REMOVE_BG_API_URL environment variable set.")
 
 # Near the top of your file, with other environment variable loads
 SPECIAL_GUILD_ID = os.getenv("SPECIAL_GUILD_ID")
