@@ -1334,6 +1334,14 @@ Resumí en tono informativo lo que dicen distintos usuarios sobre '{palabra}'. E
 Mensajes:
 {texto_a_resumir}
 """)
+    import os
+import re
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY"),
+)
 
     await ctx.send(f"📘 **Resumen sobre '{palabra}':**\n{resumen}")
 
@@ -1348,14 +1356,6 @@ async def formato(ctx):
         "```"
     )
 
-import os
-import re
-from openai import OpenAI
-
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-)
 
 @bot.command(name='resumen', help='Genera un resumen de las observaciones de un nick (ej: !resumen Sellae)')
 async def resumen(ctx, *, nick):
