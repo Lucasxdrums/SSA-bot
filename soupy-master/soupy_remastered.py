@@ -1312,28 +1312,6 @@ async def process_image_attachment(attachment, message):
 Other commands
 ---------------------------------------------------------------------------------
 """
-@bot.command(name="guild")
-async def guild_summary(ctx, *, palabra):
-    await ctx.send(f"🔍 Buscando información sobre '{palabra}'...")
-
-    mensajes = []
-    async for msg in ctx.channel.history(limit=500):  # Ajustá el límite según tus necesidades
-        if palabra.lower() in msg.content.lower() and not msg.author.bot:
-            mensajes.append(f"{msg.author.display_name}: {msg.content}")
-
-    if not mensajes:
-        await ctx.send("❌ No encontré mensajes relacionados con ese término.")
-        return
-
-    texto_a_resumir = "\n".join(mensajes)
-
-    # Llamás a GPT con el resumen
-    resumen = await resumir_con_gpt(f"""
-Resumí en tono informativo lo que dicen distintos usuarios sobre '{palabra}'. Extraé ideas clave, diferencias, acuerdos, ejemplos de uso, etc.
-
-Mensajes:
-{texto_a_resumir}
-""")
 
 @bot.command(name="formato", help="Muestra el formato correcto para registrar una misión.")
 async def formato(ctx):
@@ -1345,6 +1323,44 @@ async def formato(ctx):
         "Observacion: \"detalles devueltos de la misión\"\n"
         "```"
     )
+@bot.command(name='guild', help='Genera un resumen de los mensajes relacionados a una palabra clave (ej: !guild HypE)')
+async def guild(ctx, *, palabra_clave):
+    await ctx.send(f"🔍 Buscando mensajes relacionados con: **{palabra_clave}**...")
+
+    canal = ctx.channel
+    mensajes_encontrados = []
+
+    async for mensaje in canal.history(limit=1000):
+        if mensaje.author.bot:
+            continue
+        if palabra_clave.lower() in mensaje.content.lower():
+            mensajes_encontrados.append(mensaje.content)
+
+    if not mensajes_encontrados:
+        await ctx.send(f"❌ No se encontraron mensajes que contengan la palabra: {palabra_clave}")
+        return
+
+    texto_mensajes = "\n".join(mensajes_encontrados)
+
+    try:
+        response = client.chat.completions.create(
+            model="microsoft/mai-ds-r1:free",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Sos un asistente que resume información recopilada de jugadores de un canal de Discord."
+                },
+                {
+                    "role": "user",
+                    "content": f"Generá un resumen de los siguientes mensajes relacionados con '{palabra_clave}':\n\n{texto_mensajes}"
+                }
+            ]
+        )
+        resumen = response.choices[0].message.content
+        await ctx.send(f"📝 Resumen sobre **{palabra_clave}**:\n{resumen}")
+
+    except Exception as e:
+        await ctx.send(f"❌ Error al generar resumen: {e}")
 
 
 @bot.command(name='resumen', help='Genera un resumen de las observaciones de un nick (ej: !resumen Sellae)')
@@ -1414,7 +1430,7 @@ async def peticiones(ctx):
         "`!catalogo` - Muestra el catálogo de misiones desde el mensaje fijado",
         "`!resumen Nick de la unidad` - Envía todos los datos de observaciones para hacer preguntas complejas (WIP)",
         "`!formato` - Muestra el formato correcto para registrar una misión",
-        "`!guild` - Muestra el formato correcto para registrar una misión",
+        "`!guild` - genera un resumen de la plabra clave o en busqueda de una hermandad lo que inicialmente fue creado este comando",
     ]
     respuesta = "**📜 Peticiones disponibles:**\n" + "\n".join(comandos)
     await ctx.send("✅ Comando recibido.\n" + respuesta)  # Confirmación visible en Discord
