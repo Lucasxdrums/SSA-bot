@@ -270,9 +270,12 @@ Load Environment Variables
 load_dotenv()
 
 # The local LLM usage
-client = OpenAI(base_url=os.getenv("OPENAI_BASE_URL"),
-                api_key=os.getenv("OPENAI_API_KEY", "lm-studio"))
+import openai
 
+client = openai.OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY")
+)
 # Parse OWNER_IDS from .env
 OWNER_IDS = [
     int(id.strip()) for id in os.getenv("OWNER_IDS", "").split(",")
