@@ -1312,6 +1312,31 @@ async def process_image_attachment(attachment, message):
 Other commands
 ---------------------------------------------------------------------------------
 """
+@bot.command(name="guild")
+async def guild_summary(ctx, *, palabra):
+    await ctx.send(f"🔍 Buscando información sobre '{palabra}'...")
+
+    mensajes = []
+    async for msg in ctx.channel.history(limit=500):  # Ajustá el límite según tus necesidades
+        if palabra.lower() in msg.content.lower() and not msg.author.bot:
+            mensajes.append(f"{msg.author.display_name}: {msg.content}")
+
+    if not mensajes:
+        await ctx.send("❌ No encontré mensajes relacionados con ese término.")
+        return
+
+    texto_a_resumir = "\n".join(mensajes)
+
+    # Llamás a GPT con el resumen
+    resumen = await resumir_con_gpt(f"""
+Resumí en tono informativo lo que dicen distintos usuarios sobre '{palabra}'. Extraé ideas clave, diferencias, acuerdos, ejemplos de uso, etc.
+
+Mensajes:
+{texto_a_resumir}
+""")
+
+    await ctx.send(f"📘 **Resumen sobre '{palabra}':**\n{resumen}")
+
 @bot.command(name="formato", help="Muestra el formato correcto para registrar una misión.")
 async def formato(ctx):
     await ctx.send(
@@ -1377,6 +1402,18 @@ async def resumen(ctx, *, nick):
     except Exception as e:
         await ctx.send(f"❌ Error al generar resumen: {e}")
 
+import openai
+
+async def resumir_con_gpt(prompt):
+    client = openai.AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))  # asegúrate de que esté seteada
+
+    respuesta = await client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return respuesta.choices[0].message.content.strip()
+
+
 
 @bot.command(name='peticiones', help='Muestra los comandos especiales que agregaste')
 async def peticiones(ctx):
@@ -1385,8 +1422,9 @@ async def peticiones(ctx):
     comandos = [
         "`!estado Nick de la unidad` - Analiza cuántas misiones hizo cada nick",
         "`!catalogo` - Muestra el catálogo de misiones desde el mensaje fijado",
-        "`!Estado Nick de la unidad` - Envía todos los datos de observaciones para hacer preguntas complejas (WIP)",
+        "`!resumen Nick de la unidad` - Envía todos los datos de observaciones para hacer preguntas complejas (WIP)",
         "`!formato` - Muestra el formato correcto para registrar una misión",
+        "`!guild` - Muestra el formato correcto para registrar una misión",
     ]
     respuesta = "**📜 Peticiones disponibles:**\n" + "\n".join(comandos)
     await ctx.send("✅ Comando recibido.\n" + respuesta)  # Confirmación visible en Discord
